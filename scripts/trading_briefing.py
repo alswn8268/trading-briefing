@@ -161,19 +161,17 @@ def analyze_with_claude(market_data: dict, news: list[dict]) -> dict:
                 model="claude-sonnet-4-6",
                 max_tokens=4096,
                 system=SYSTEM_PROMPT,
-                # prefill: { 로 시작을 강제해 반드시 JSON이 나오게 함
-                messages=[
-                    {"role": "user",      "content": prompt},
-                    {"role": "assistant", "content": "{"},
-                ],
+                messages=[{"role": "user", "content": prompt}],
             )
 
-            if not resp.content or not resp.content[0].text.strip():
-                raise ValueError(f"Empty Claude response (stop_reason={resp.stop_reason})")
+            text = resp.content[0].text if resp.content else ""
+            if not text.strip():
+                raise ValueError(
+                    f"Empty Claude response "
+                    f"(stop_reason={resp.stop_reason}, usage={resp.usage})"
+                )
 
-            # prefill 한 글자 { 를 앞에 다시 붙여서 완전한 JSON 복원
-            raw = "{" + resp.content[0].text
-            return _extract_json(raw)
+            return _extract_json(text)
 
         except (json.JSONDecodeError, ValueError) as e:
             print(f"  [warn] attempt {attempt + 1}/3 failed: {e}")
