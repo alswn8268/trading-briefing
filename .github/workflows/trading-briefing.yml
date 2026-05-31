@@ -1,0 +1,32 @@
+name: Daily Trading Briefing
+
+on:
+  schedule:
+    # 08:30 KST (UTC+9) = 23:30 UTC  →  월~금 아침 자동 실행
+    # Cron: Sunday–Thursday 23:30 UTC = Monday–Friday 08:30 KST
+    - cron: "30 23 * * 0-4"
+  workflow_dispatch:  # 언제든지 수동 실행 가능
+
+jobs:
+  post-briefing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run briefing
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          ANTHROPIC_API_KEY:   ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/trading_briefing.py
